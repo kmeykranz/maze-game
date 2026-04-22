@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -31,7 +32,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: 
+            background:
                 radial-gradient(circle at 20% 80%, rgba(0, 255, 255, 0.2) 0%, transparent 50%),
                 radial-gradient(circle at 80% 20%, rgba(255, 0, 255, 0.2) 0%, transparent 50%),
                 repeating-linear-gradient(0deg, rgba(0, 255, 255, 0.03) 0px, rgba(0, 255, 255, 0.03) 2px, transparent 2px, transparent 8px);
@@ -41,8 +42,15 @@
         }
 
         @keyframes aurora {
-            0% { opacity: 0.6; filter: hue-rotate(0deg);}
-            100% { opacity: 1; filter: hue-rotate(5deg);}
+            0% {
+                opacity: 0.6;
+                filter: hue-rotate(0deg);
+            }
+
+            100% {
+                opacity: 1;
+                filter: hue-rotate(5deg);
+            }
         }
 
         body::after {
@@ -53,8 +61,8 @@
             width: 100%;
             height: 100%;
             background-image: radial-gradient(1px 1px at 15px 40px, #fff, transparent),
-                              radial-gradient(2px 2px at 70px 120px, #0ff, transparent),
-                              radial-gradient(1px 1px at 140px 70px, #f0f, transparent);
+                radial-gradient(2px 2px at 70px 120px, #0ff, transparent),
+                radial-gradient(1px 1px at 140px 70px, #f0f, transparent);
             background-repeat: repeat;
             background-size: 180px 180px;
             pointer-events: none;
@@ -63,8 +71,13 @@
         }
 
         @keyframes starDrift {
-            from { transform: translateY(0px); }
-            to { transform: translateY(-100px); }
+            from {
+                transform: translateY(0px);
+            }
+
+            to {
+                transform: translateY(-100px);
+            }
         }
 
         .game-wrapper {
@@ -80,7 +93,7 @@
             display: block;
             margin: 0 auto;
             border-radius: 20px;
-            box-shadow: 0 0 0 2px #00ffff33, 0 0 0 5px #ff00ff22, 0 15px 35px rgba(0,0,0,0.6);
+            box-shadow: 0 0 0 2px #00ffff33, 0 0 0 5px #ff00ff22, 0 15px 35px rgba(0, 0, 0, 0.6);
             cursor: pointer;
             background: #050510;
         }
@@ -175,6 +188,7 @@
             box-shadow: 0 0 8px rgba(0, 255, 255, 0.6);
             text-shadow: 0 0 3px #0ff;
         }
+
         button:hover {
             background: linear-gradient(135deg, #00ccff, #0088ee);
             transform: scale(1.02);
@@ -193,12 +207,13 @@
             color: #0ff;
             font-size: 0.7rem;
             margin-top: 14px;
-            background: rgba(0,0,0,0.6);
+            background: rgba(0, 0, 0, 0.6);
             display: inline-block;
             padding: 6px 18px;
             border-radius: 40px;
             letter-spacing: 1px;
         }
+
         kbd {
             background: #111;
             border-radius: 6px;
@@ -232,880 +247,975 @@
         }
 
         @media (max-width: 700px) {
-            .info-panel { gap: 6px; padding: 6px 12px; }
-            .status, .level-badge, .timer-glow, .inventory-panel { font-size: 0.7rem; padding: 3px 10px; }
-            button { padding: 4px 12px; font-size: 0.7rem; }
+            .info-panel {
+                gap: 6px;
+                padding: 6px 12px;
+            }
+
+            .status,
+            .level-badge,
+            .timer-glow,
+            .inventory-panel {
+                font-size: 0.7rem;
+                padding: 3px 10px;
+            }
+
+            button {
+                padding: 4px 12px;
+                font-size: 0.7rem;
+            }
         }
     </style>
 </head>
-<body>
-<div>
-    <div class="game-wrapper">
-        <canvas id="gameCanvas" width="650" height="650"></canvas>
-        <div class="info-panel">
-            <div class="status" id="gameStatus">>>起什么名字好呢</div>
-            <div class="level-badge" id="levelBadge">[ 14x14 ]</div>
-            <div class="timer-glow" id="mytime">00时00分00秒000毫秒</div>
-            <div class="inventory-panel" id="inventoryPanel">
-                <span>🎒</span>
-                <span class="inventory-item" id="keyCount">🔑 0</span>
-                <span class="inventory-item" id="shieldCount">🛡️ 0</span>
-                <span class="inventory-item" id="speedCount">⚡ 0</span>
-            </div>
-            <button id="resetBtn">⟳ 重启</button>
-            <button id="startBtn">▶ 开始</button>
-            <button id="pauseBtn">⏸ 暂停</button>
-            <button class="item-btn" id="useKeyBtn">🔑 用钥匙</button>
-            <button class="item-btn" id="useShieldBtn">🛡️ 护盾</button>
-            <button class="item-btn" id="useSpeedBtn">⚡ 加速</button>
-        </div>
-        <div class="controls-hint">
-            <kbd>←↑↓→</kbd> <kbd>WASD</kbd> 移动 · <kbd>空格</kbd> 使用道具 · 收集道具强化能力
-        </div>
-    </div>
-    <div id="toastMsg" class="toast-msg">> 系统连线中</div>
-</div>
 
-<script>
-    (function(){
-        // ---------- 加入了一些杂七杂八的道具元素，总之加了 ----------
-        let canvas = document.getElementById('gameCanvas');
-        let ctx = canvas.getContext('2d');
-        
-        // 道具类型定义
-        const ITEM_TYPES = {
-            KEY: 'key',           // 钥匙 - 可以打开一堵墙
-            SHIELD: 'shield',     // 护盾 - 抵挡一次墙壁碰撞
-            SPEED: 'speed',       // 加速 - 移动速度提升（允许连续移动2格）
-            TELEPORT: 'teleport', // 传送 - 随机传送（稀有）卧槽我是天才
-            COMPASS: 'compass'    // 指南针 - 显示到终点的路径（稀有）
-        };
-        
-        // 游戏核心参数
-        let currentSize = 14;
-        let playerPos = { x: 0, y: 0 };
-        let goalPos = { row: 0, col: 0 };
-        let isling = [];
-        let tree = [];
-        let gameActive = true;
-        let gameWinFlag = false;
-        let winParticles = [];
-        let showLevelComplete = false;
-        let isGraduated = false;
-        
-        // 道具系统
-        let items = []; // 存储所有道具 {row, col, type, collected}
-        let inventory = {
-            keys: 0,
-            shields: 0,
-            speedBoosts: 0
-        };
-        let activeBuffs = {
-            shield: false,      // 护盾激活
-            speedBoost: 0,      // 加速剩余步数
-            compass: false      // 指南针激活
-        };
-        
-        // 计时相关
-        let timerInterval = null;
-        let h=0,m=0,s=0,ms=0;
-        let isTimerRunning = false;
-        
-        // 特效时间
-        let timeShader = 0;
-        
-        // DOM 元素 是的我们计算机真的有dom
-        const timeSpan = document.getElementById('mytime');
-        const resetBtn = document.getElementById('resetBtn');
-        const startBtn = document.getElementById('startBtn');
-        const pauseBtn = document.getElementById('pauseBtn');
-        const statusDiv = document.getElementById('gameStatus');
-        const levelBadge = document.getElementById('levelBadge');
-        const keyCountSpan = document.getElementById('keyCount');
-        const shieldCountSpan = document.getElementById('shieldCount');
-        const speedCountSpan = document.getElementById('speedCount');
-        const useKeyBtn = document.getElementById('useKeyBtn');
-        const useShieldBtn = document.getElementById('useShieldBtn');
-        const useSpeedBtn = document.getElementById('useSpeedBtn');
-        
-        let cellW, cellH;
-        function calcCellSize() {
-            const w = canvas.clientWidth;
-            const h = canvas.clientHeight;
-            canvas.width = w;
-            canvas.height = h;
-            cellW = w / currentSize;
-            cellH = h / currentSize;
-        }
-        
-        function showToast(msg, isError = false) {
-            const toast = document.getElementById('toastMsg');
-            toast.textContent = `> ${msg}`;
-            toast.style.borderColor = isError ? '#ff3366' : '#0ff';
-            toast.style.opacity = '1';
-            if(window.toastTimer) clearTimeout(window.toastTimer);
-            window.toastTimer = setTimeout(() => { toast.style.opacity = '0'; }, 2000);
-        }
-        
-        // ---------- 道具生成 ----------
-        function generateItems() {
-            items = [];
-            const itemCount = Math.floor(currentSize * currentSize * 0.05); // 5%的格子有道具
-            
-            for(let i = 0; i < itemCount; i++) {
-                let row, col;
-                let validPosition = false;
-                let attempts = 0;
-                
-                while(!validPosition && attempts < 100) {
-                    row = Math.floor(Math.random() * currentSize);
-                    col = Math.floor(Math.random() * currentSize);
-                    // 不在起点和终点生成道具  开局一条龙装备全靠刷
-                    if((row === 0 && col === 0) || (row === goalPos.row && col === goalPos.col)) {
-                        attempts++;
-                        continue;
-                    }
-                    // 检查是否已有道具
-                    if(!items.some(item => item.row === row && item.col === col)) {
-                        validPosition = true;
-                    }
-                    attempts++;
-                }
-                
-                if(validPosition) {
-                    // 随机选择道具类型（带权重）这里可以修改道具的概率，如果不喜欢的话调低就好
-                    const rand = Math.random();
-                    let type;
-                    if(rand < 0.4) type = ITEM_TYPES.KEY;
-                    else if(rand < 0.7) type = ITEM_TYPES.SHIELD;
-                    else if(rand < 0.9) type = ITEM_TYPES.SPEED;
-                    else if(rand < 0.95) type = ITEM_TYPES.TELEPORT;
-                    else type = ITEM_TYPES.COMPASS;
-                    
-                    items.push({
-                        row, col,
-                        type,
-                        collected: false
-                    });
-                }
+<body>
+    <div>
+        <div class="game-wrapper">
+            <canvas id="gameCanvas" width="650" height="650"></canvas>
+            <div class="info-panel">
+                <div class="status" id="gameStatus">>>起什么名字好呢</div>
+                <div class="level-badge" id="levelBadge">[ 14x14 ]</div>
+                <div class="timer-glow" id="mytime">00时00分00秒000毫秒</div>
+                <div class="inventory-panel" id="inventoryPanel">
+                    <span>🎒</span>
+                    <span class="inventory-item" id="keyCount">🔑 0</span>
+                    <span class="inventory-item" id="shieldCount">🛡️ 0</span>
+                    <span class="inventory-item" id="speedCount">⚡ 0</span>
+                </div>
+                <button id="resetBtn">⟳ 重启</button>
+                <button id="startBtn">▶ 开始</button>
+                <button id="pauseBtn">⏸ 暂停</button>
+                <button class="item-btn" id="useKeyBtn">🔑 用钥匙</button>
+                <button class="item-btn" id="useShieldBtn">🛡️ 护盾</button>
+                <button class="item-btn" id="useSpeedBtn">⚡ 加速</button>
+            </div>
+            <div class="controls-hint">
+                <kbd>←↑↓→</kbd> <kbd>WASD</kbd> 移动 · <kbd>空格</kbd> 使用道具 · 收集道具强化能力
+            </div>
+        </div>
+        <div id="toastMsg" class="toast-msg">> 系统连线中</div>
+    </div>
+
+    <script>
+        (function () {
+            // ---------- 加入了一些杂七杂八的道具元素，总之加了 ----------
+            let canvas = document.getElementById('gameCanvas');
+            let ctx = canvas.getContext('2d');
+
+            // 道具类型定义
+            const ITEM_TYPES = {
+                KEY: 'key',           // 钥匙 - 可以打开一堵墙
+                SHIELD: 'shield',     // 护盾 - 抵挡一次墙壁碰撞
+                SPEED: 'speed',       // 加速 - 移动速度提升（允许连续移动2格）
+                TELEPORT: 'teleport', // 传送 - 随机传送（稀有）卧槽我是天才
+                COMPASS: 'compass'    // 指南针 - 显示到终点的路径（稀有）
+            };
+
+            // 游戏核心参数
+            let currentSize = 14;
+            let playerPos = { x: 0, y: 0 };
+            let goalPos = { row: 0, col: 0 };
+            let isling = [];
+            let tree = [];
+            let gameActive = true;
+            let gameWinFlag = false;
+            let winParticles = [];
+            let showLevelComplete = false;
+            let isGraduated = false;
+
+            // 道具系统
+            let items = []; // 存储所有道具 {row, col, type, collected}
+            let inventory = {
+                keys: 0,
+                shields: 0,
+                speedBoosts: 0
+            };
+            let activeBuffs = {
+                shield: false,      // 护盾激活
+                speedBoost: 0,      // 加速剩余步数
+                compass: false      // 指南针激活
+            };
+
+            // 计时相关
+            let timerInterval = null;
+            let h = 0, m = 0, s = 0, ms = 0;
+            let isTimerRunning = false;
+
+            // 特效时间
+            let timeShader = 0;
+
+            // DOM 元素 是的我们计算机真的有dom
+            const timeSpan = document.getElementById('mytime');
+            const resetBtn = document.getElementById('resetBtn');
+            const startBtn = document.getElementById('startBtn');
+            const pauseBtn = document.getElementById('pauseBtn');
+            const statusDiv = document.getElementById('gameStatus');
+            const levelBadge = document.getElementById('levelBadge');
+            const keyCountSpan = document.getElementById('keyCount');
+            const shieldCountSpan = document.getElementById('shieldCount');
+            const speedCountSpan = document.getElementById('speedCount');
+            const useKeyBtn = document.getElementById('useKeyBtn');
+            const useShieldBtn = document.getElementById('useShieldBtn');
+            const useSpeedBtn = document.getElementById('useSpeedBtn');
+
+            let cellW, cellH;
+            function calcCellSize() {
+                const w = canvas.clientWidth;
+                const h = canvas.clientHeight;
+                canvas.width = w;
+                canvas.height = h;
+                cellW = w / currentSize;
+                cellH = h / currentSize;
             }
-        }
-        
-        // ---------- 迷宫生成算法，是grim tree的算法，写readme的时候可以加入 ----------
-        function initMazeStruct(size) {
-            tree = [];
-            isling = [];
-            for(let i=0;i<size;i++){
-                tree[i]=[];
-                for(let j=0;j<size;j++){
-                    tree[i][j] = -1;
-                }
+
+            function showToast(msg, isError = false) {
+                const toast = document.getElementById('toastMsg');
+                toast.textContent = `> ${msg}`;
+                toast.style.borderColor = isError ? '#ff3366' : '#0ff';
+                toast.style.opacity = '1';
+                if (window.toastTimer) clearTimeout(window.toastTimer);
+                window.toastTimer = setTimeout(() => { toast.style.opacity = '0'; }, 2000);
             }
-            for(let i=0;i<size*size;i++){
-                isling[i]=[];
-                for(let j=0;j<size*size;j++){
-                    isling[i][j] = 0;
-                }
-            }
-        }
-        
-        function getNeighbor(idx, size){
-            let x = Math.floor(idx / size);
-            let y = idx % size;
-            let neighbors = [];
-            if(x-1 >= 0) neighbors.push((x-1)*size + y);
-            if(x+1 < size) neighbors.push((x+1)*size + y);
-            if(y+1 < size) neighbors.push(x*size + y+1);
-            if(y-1 >= 0) neighbors.push(x*size + y-1);
-            if(neighbors.length === 0) return idx;
-            let ran = Math.floor(Math.random() * neighbors.length);
-            return neighbors[ran];
-        }
-        
-        function searchNode(a, size){
-            let x = Math.floor(a/size), y = a%size;
-            if(tree[x][y] > 0){
-                return searchNode(tree[x][y], size);
-            } else {
-                return a;
-            }
-        }
-        
-        function unionNodes(a,b,size){
-            let aRoot = searchNode(a,size);
-            let bRoot = searchNode(b,size);
-            if(aRoot === bRoot) return;
-            let ax = Math.floor(aRoot/size), ay = aRoot%size;
-            let bx = Math.floor(bRoot/size), by = bRoot%size;
-            if(tree[ax][ay] < tree[bx][by]){
-                tree[ax][ay] += tree[bx][by];
-                tree[bx][by] = aRoot;
-            } else {
-                tree[bx][by] += tree[ax][ay];
-                tree[ax][ay] = bRoot;
-            }
-        }
-        
-        function generateMaze(size) {
-            initMazeStruct(size);
-            let edges = [];
-            for(let i=0;i<size*size;i++){
-                let x = Math.floor(i/size);
-                let y = i%size;
-                if(x+1 < size) edges.push([i, (x+1)*size+y]);
-                if(y+1 < size) edges.push([i, x*size+y+1]);
-            }
-            for(let i=edges.length-1;i>0;i--){
-                const j = Math.floor(Math.random()*(i+1));
-                [edges[i], edges[j]] = [edges[j], edges[i]];
-            }
-            for(let [a,b] of edges){
-                if(searchNode(a,size) !== searchNode(b,size)){
-                    isling[a][b] = 1;
-                    isling[b][a] = 1;
-                    unionNodes(a,b,size);
-                }
-            }
-        }
-        
-        function isConnected(idxA, idxB, size){
-            if(idxA === idxB) return true;
-            if(isling[idxA] && isling[idxA][idxB] === 1) return true;
-            return false;
-        }
-        
-        // 使用钥匙打破墙壁
-        function useKeyOnWall(fromIdx, toIdx) {
-            if(inventory.keys <= 0) {
-                showToast("❌ 没有钥匙", true);
-                return false;
-            }
-            if(isConnected(fromIdx, toIdx, currentSize)) {
-                showToast("❌ 这里没有墙", true);
-                return false;
-            }
-            
-            // 打破墙壁
-            isling[fromIdx][toIdx] = 1;
-            isling[toIdx][fromIdx] = 1;
-            inventory.keys--;
-            updateInventoryDisplay();
-            showToast("🔓 墙壁已破坏！");
-            return true;
-        }
-        
-        // 收集道具
-        function collectItem(row, col) {
-            const itemIndex = items.findIndex(item => item.row === row && item.col === col && !item.collected);
-            if(itemIndex === -1) return false;
-            
-            const item = items[itemIndex];
-            item.collected = true;
-            
-            switch(item.type) {
-                case ITEM_TYPES.KEY:
-                    inventory.keys++;
-                    showToast("🔑 获得钥匙！可以打开一堵墙");
-                    break;
-                case ITEM_TYPES.SHIELD:
-                    inventory.shields++;
-                    showToast("🛡️ 获得护盾！可以抵挡一次墙壁");
-                    break;
-                case ITEM_TYPES.SPEED:
-                    inventory.speedBoosts++;
-                    showToast("⚡ 获得加速！可以连续移动2格");
-                    break;
-                case ITEM_TYPES.TELEPORT:
-                    // 立即使用传送
-                    let newRow, newCol;
-                    let validTeleport = false;
+
+            // ---------- 道具生成 ----------
+            function generateItems() {
+                items = [];
+                const itemCount = Math.floor(currentSize * currentSize * 0.05); // 5%的格子有道具
+
+                for (let i = 0; i < itemCount; i++) {
+                    let row, col;
+                    let validPosition = false;
                     let attempts = 0;
-                    while(!validTeleport && attempts < 50) {
-                        newRow = Math.floor(Math.random() * currentSize);
-                        newCol = Math.floor(Math.random() * currentSize);
-                        if(!(newRow === goalPos.row && newCol === goalPos.col)) {
-                            validTeleport = true;
+
+                    while (!validPosition && attempts < 100) {
+                        row = Math.floor(Math.random() * currentSize);
+                        col = Math.floor(Math.random() * currentSize);
+                        // 不在起点和终点生成道具  开局一条龙装备全靠刷
+                        if ((row === 0 && col === 0) || (row === goalPos.row && col === goalPos.col)) {
+                            attempts++;
+                            continue;
+                        }
+                        // 检查是否已有道具
+                        if (!items.some(item => item.row === row && item.col === col)) {
+                            validPosition = true;
                         }
                         attempts++;
                     }
-                    if(validTeleport) {
-                        playerPos.x = newCol;
-                        playerPos.y = newRow;
-                        showToast("🌀 随机传送！");
+
+                    if (validPosition) {
+                        // 随机选择道具类型（带权重）这里可以修改道具的概率，如果不喜欢的话调低就好
+                        const rand = Math.random();
+                        let type;
+                        if (rand < 0.4) type = ITEM_TYPES.KEY;
+                        else if (rand < 0.7) type = ITEM_TYPES.SHIELD;
+                        else if (rand < 0.9) type = ITEM_TYPES.SPEED;
+                        else if (rand < 0.95) type = ITEM_TYPES.TELEPORT;
+                        else type = ITEM_TYPES.COMPASS;
+
+                        items.push({
+                            row, col,
+                            type,
+                            collected: false
+                        });
                     }
-                    break;
-                case ITEM_TYPES.COMPASS:
-                    activeBuffs.compass = true;
-                    showToast("🧭 获得指南针！显示通往终点的路径");
-                    setTimeout(() => {
-                        activeBuffs.compass = false;
-                        draw();
-                    }, 5000);
-                    break;
-            }
-            
-            updateInventoryDisplay();
-            items.splice(itemIndex, 1);
-            return true;
-        }
-        
-        // 激活加速
-        function activateSpeedBoost() {
-            if(inventory.speedBoosts <= 0) {
-                showToast("❌ 没有加速道具", true);
-                return false;
-            }
-            inventory.speedBoosts--;
-            activeBuffs.speedBoost = 2; // 可以连续移动2次
-            updateInventoryDisplay();
-            showToast("⚡ 加速激活！可以连续移动2格");
-            return true;
-        }
-        
-        // 激活护盾
-        function activateShield() {
-            if(inventory.shields <= 0) {
-                showToast("❌ 没有护盾", true);
-                return false;
-            }
-            inventory.shields--;
-            activeBuffs.shield = true;
-            updateInventoryDisplay();
-            showToast("🛡️ 护盾激活！下次撞墙将被抵挡");
-            return true;
-        }
-        
-        // 移动尝试
-        function tryMove(dRow, dCol) {
-            if(!gameActive || gameWinFlag) return false;
-            
-            let curRow = playerPos.y;
-            let curCol = playerPos.x;
-            let newRow = curRow + dRow;
-            let newCol = curCol + dCol;
-            
-            if(newRow < 0 || newRow >= currentSize || newCol < 0 || newCol >= currentSize) {
-                showToast("边界封锁", true);
-                return false;
-            }
-            
-            let curIdx = curRow * currentSize + curCol;
-            let newIdx = newRow * currentSize + newCol;
-            
-            // 检查是否有墙
-            if(!isConnected(curIdx, newIdx, currentSize)){
-                // 检查护盾
-                if(activeBuffs.shield) {
-                    activeBuffs.shield = false;
-                    // 打破墙壁
-                    isling[curIdx][newIdx] = 1;
-                    isling[newIdx][curIdx] = 1;
-                    showToast("🛡️ 护盾破碎了墙壁！");
-                } else {
-                    showToast("❌ 墙壁阻挡", true);
-                    return false;
                 }
             }
-            
-            // 移动
-            playerPos.x = newCol;
-            playerPos.y = newRow;
-            
-            // 检查道具收集
-            collectItem(newRow, newCol);
-            
-            // 胜利判定
-            if(newRow === goalPos.row && newCol === goalPos.col){
-                gameWinFlag = true;
-                gameActive = false;
-                if(timerInterval) clearInterval(timerInterval);
-                isTimerRunning = false;
-                showToast(`✨ 突破成功！ 迷宫扩大 ✨`);
-                generateWinParticles();
-                let newSize = currentSize + 2;
-                if(newSize > 24) {
-                    showToast("🏆 我的法克不知道说啥总之恭喜你通关，爱来自不会说吉祥话之物 🏆");
-                    statusDiv.innerHTML = ">> 无限超越 <<";
-                    levelBadge.innerHTML = "[ 毕业证 ]";
+
+            // ---------- 迷宫生成算法，是grim tree的算法，写readme的时候可以加入 ----------
+            function initMazeStruct(size) {
+                tree = [];
+                isling = [];
+                for (let i = 0; i < size; i++) {
+                    tree[i] = [];
+                    for (let j = 0; j < size; j++) {
+                        tree[i][j] = -1;
+                    }
+                }
+                for (let i = 0; i < size * size; i++) {
+                    isling[i] = [];
+                    for (let j = 0; j < size * size; j++) {
+                        isling[i][j] = 0;
+                    }
+                }
+            }
+
+            function getNeighbor(idx, size) {
+                let x = Math.floor(idx / size);
+                let y = idx % size;
+                let neighbors = [];
+                if (x - 1 >= 0) neighbors.push((x - 1) * size + y);
+                if (x + 1 < size) neighbors.push((x + 1) * size + y);
+                if (y + 1 < size) neighbors.push(x * size + y + 1);
+                if (y - 1 >= 0) neighbors.push(x * size + y - 1);
+                if (neighbors.length === 0) return idx;
+                let ran = Math.floor(Math.random() * neighbors.length);
+                return neighbors[ran];
+            }
+
+            function searchNode(a, size) {
+                let x = Math.floor(a / size), y = a % size;
+                if (tree[x][y] > 0) {
+                    return searchNode(tree[x][y], size);
+                } else {
+                    return a;
+                }
+            }
+
+            function unionNodes(a, b, size) {
+                let aRoot = searchNode(a, size);
+                let bRoot = searchNode(b, size);
+                if (aRoot === bRoot) return;
+                let ax = Math.floor(aRoot / size), ay = aRoot % size;
+                let bx = Math.floor(bRoot / size), by = bRoot % size;
+                if (tree[ax][ay] < tree[bx][by]) {
+                    tree[ax][ay] += tree[bx][by];
+                    tree[bx][by] = aRoot;
+                } else {
+                    tree[bx][by] += tree[ax][ay];
+                    tree[ax][ay] = bRoot;
+                }
+            }
+
+            function generateMaze(size) {
+                initMazeStruct(size);
+                let edges = [];
+                for (let i = 0; i < size * size; i++) {
+                    let x = Math.floor(i / size);
+                    let y = i % size;
+                    if (x + 1 < size) edges.push([i, (x + 1) * size + y]);
+                    if (y + 1 < size) edges.push([i, x * size + y + 1]);
+                }
+                for (let i = edges.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [edges[i], edges[j]] = [edges[j], edges[i]];
+                }
+                for (let [a, b] of edges) {
+                    if (searchNode(a, size) !== searchNode(b, size)) {
+                        isling[a][b] = 1;
+                        isling[b][a] = 1;
+                        unionNodes(a, b, size);
+                    }
+                }
+            }
+
+            function isConnected(idxA, idxB, size) {
+                if (idxA === idxB) return true;
+                if (isling[idxA] && isling[idxA][idxB] === 1) return true;
+                return false;
+            }
+
+            // 使用钥匙打破墙壁
+            function useKeyOnWall(fromIdx, toIdx) {
+                if (inventory.keys <= 0) {
+                    showToast("❌ 没有钥匙", true);
+                    return false;
+                }
+                if (isConnected(fromIdx, toIdx, currentSize)) {
+                    showToast("❌ 这里没有墙", true);
+                    return false;
+                }
+
+                // 打破墙壁
+                isling[fromIdx][toIdx] = 1;
+                isling[toIdx][fromIdx] = 1;
+                inventory.keys--;
+                updateInventoryDisplay();
+                showToast("🔓 墙壁已破坏！");
+                return true;
+            }
+
+            // 收集道具
+            function collectItem(row, col) {
+                const itemIndex = items.findIndex(item => item.row === row && item.col === col && !item.collected);
+                if (itemIndex === -1) return false;
+
+                const item = items[itemIndex];
+                item.collected = true;
+
+                switch (item.type) {
+                    case ITEM_TYPES.KEY:
+                        inventory.keys++;
+                        showToast("🔑 获得钥匙！可以打开一堵墙");
+                        break;
+                    case ITEM_TYPES.SHIELD:
+                        inventory.shields++;
+                        showToast("🛡️ 获得护盾！可以抵挡一次墙壁");
+                        break;
+                    case ITEM_TYPES.SPEED:
+                        inventory.speedBoosts++;
+                        showToast("⚡ 获得加速！可以连续移动2格");
+                        break;
+                    case ITEM_TYPES.TELEPORT:
+                        // 立即使用传送
+                        let newRow, newCol;
+                        let validTeleport = false;
+                        let attempts = 0;
+                        while (!validTeleport && attempts < 50) {
+                            newRow = Math.floor(Math.random() * currentSize);
+                            newCol = Math.floor(Math.random() * currentSize);
+                            if (!(newRow === goalPos.row && newCol === goalPos.col)) {
+                                validTeleport = true;
+                            }
+                            attempts++;
+                        }
+                        if (validTeleport) {
+                            playerPos.x = newCol;
+                            playerPos.y = newRow;
+                            showToast("🌀 随机传送！");
+                        }
+                        break;
+                    case ITEM_TYPES.COMPASS:
+                        activeBuffs.compass = true;
+                        showToast("🧭 获得指南针！显示通往终点的路径");
+                        setTimeout(() => {
+                            activeBuffs.compass = false;
+                            draw();
+                        }, 5000);
+                        break;
+                }
+
+                updateInventoryDisplay();
+                items.splice(itemIndex, 1);
+                return true;
+            }
+
+            // 激活加速
+            function activateSpeedBoost() {
+                if (inventory.speedBoosts <= 0) {
+                    showToast("❌ 没有加速道具", true);
+                    return false;
+                }
+                inventory.speedBoosts--;
+                activeBuffs.speedBoost = 2; // 可以连续移动2次
+                updateInventoryDisplay();
+                showToast("⚡ 加速激活！可以连续移动2格");
+                return true;
+            }
+
+            // 激活护盾
+            function activateShield() {
+                if (inventory.shields <= 0) {
+                    showToast("❌ 没有护盾", true);
+                    return false;
+                }
+                inventory.shields--;
+                activeBuffs.shield = true;
+                updateInventoryDisplay();
+                showToast("🛡️ 护盾激活！下次撞墙将被抵挡");
+                return true;
+            }
+
+            // 移动尝试
+            function tryMove(dRow, dCol) {
+                if (!gameActive || gameWinFlag) return false;
+
+                let curRow = playerPos.y;
+                let curCol = playerPos.x;
+                let newRow = curRow + dRow;
+                let newCol = curCol + dCol;
+
+                if (newRow < 0 || newRow >= currentSize || newCol < 0 || newCol >= currentSize) {
+                    showToast("边界封锁", true);
+                    return false;
+                }
+
+                let curIdx = curRow * currentSize + curCol;
+                let newIdx = newRow * currentSize + newCol;
+
+                // 检查是否有墙
+                if (!isConnected(curIdx, newIdx, currentSize)) {
+                    // 检查护盾
+                    if (activeBuffs.shield) {
+                        activeBuffs.shield = false;
+                        // 打破墙壁
+                        isling[curIdx][newIdx] = 1;
+                        isling[newIdx][curIdx] = 1;
+                        showToast("🛡️ 护盾破碎了墙壁！");
+                    } else {
+                        showToast("❌ 墙壁阻挡", true);
+                        return false;
+                    }
+                }
+
+                // 移动
+                playerPos.x = newCol;
+                playerPos.y = newRow;
+
+                // 检查道具收集
+                collectItem(newRow, newCol);
+
+                // 胜利判定
+                if (newRow === goalPos.row && newCol === goalPos.col) {
+                    gameWinFlag = true;
                     gameActive = false;
-                    isGraduated = true;
+                    if (timerInterval) clearInterval(timerInterval);
+                    isTimerRunning = false;
+                    showToast(`✨ 突破成功！ 迷宫扩大 ✨`);
+                    generateWinParticles();
+                    let newSize = currentSize + 2;
+                    if (newSize > 24) {
+                        showToast("🏆 我的法克不知道说啥总之恭喜你通关，爱来自不会说吉祥话之物 🏆");
+                        statusDiv.innerHTML = ">> 无限超越 <<";
+                        levelBadge.innerHTML = "[ 毕业证 ]";
+                        gameActive = false;
+                        isGraduated = true;
+                        showLevelComplete = true;
+                        draw();
+                        return true;
+                    }
                     showLevelComplete = true;
+                    setTimeout(() => {
+                        showLevelComplete = false;
+                        currentSize = newSize;
+                        resetGameLogic(false);
+                        gameWinFlag = false;
+                        gameActive = true;
+                        if (!isTimerRunning) startTimer();
+                        updateLevelBadge();
+                        showToast(`✨ 新领域 ${currentSize} x ${currentSize} 迷宫 ✨`);
+                        draw();
+                    }, 3000);
                     draw();
                     return true;
                 }
-                showLevelComplete = true;
-                setTimeout(() => {
-                    showLevelComplete = false;
-                    currentSize = newSize;
-                    resetGameLogic(false);
-                    gameWinFlag = false;
-                    gameActive = true;
-                    if(!isTimerRunning) startTimer();
-                    updateLevelBadge();
-                    showToast(`✨ 新领域 ${currentSize} x ${currentSize} 迷宫 ✨`);
-                    draw();
-                }, 3000);
+
+                // 处理加速效果
+                if (activeBuffs.speedBoost > 0) {
+                    activeBuffs.speedBoost--;
+                    if (activeBuffs.speedBoost === 0) {
+                        showToast("⚡ 加速效果结束");
+                    } else {
+                        showToast(`⚡ 还可以再移动 ${activeBuffs.speedBoost} 次`);
+                        // 允许再次移动
+                        setTimeout(() => {
+                            draw();
+                        }, 50);
+                    }
+                }
+
                 draw();
                 return true;
             }
-            
-            // 处理加速效果
-            if(activeBuffs.speedBoost > 0) {
-                activeBuffs.speedBoost--;
-                if(activeBuffs.speedBoost === 0) {
-                    showToast("⚡ 加速效果结束");
-                } else {
-                    showToast(`⚡ 还可以再移动 ${activeBuffs.speedBoost} 次`);
-                    // 允许再次移动
-                    setTimeout(() => {
-                        draw();
-                    }, 50);
+
+            function resetGameLogic(resetTimerFlag = true) {
+                if (resetTimerFlag && timerInterval) {
+                    clearInterval(timerInterval);
+                    isTimerRunning = false;
+                    h = m = s = ms = 0;
+                    updateTimerDisplay();
                 }
+                gameWinFlag = false;
+                gameActive = true;
+
+                // 重置道具系统
+                inventory = { keys: 0, shields: 0, speedBoosts: 0 };
+                activeBuffs = { shield: false, speedBoost: 0, compass: false };
+                updateInventoryDisplay();
+
+                generateMaze(currentSize);
+                playerPos = { x: 0, y: 0 };
+                goalPos = { row: currentSize - 1, col: currentSize - 1 };
+                generateItems(); // 生成新道具
+                draw();
             }
-            
-            draw();
-            return true;
-        }
-        
-        function resetGameLogic(resetTimerFlag = true){
-            if(resetTimerFlag && timerInterval){
-                clearInterval(timerInterval);
+
+            function fullReset() {
+                if (timerInterval) clearInterval(timerInterval);
                 isTimerRunning = false;
-                h=m=s=ms=0;
+                h = m = s = ms = 0;
                 updateTimerDisplay();
+                currentSize = 14;
+                calcCellSize();
+
+                inventory = { keys: 0, shields: 0, speedBoosts: 0 };
+                activeBuffs = { shield: false, speedBoost: 0, compass: false };
+                updateInventoryDisplay();
+
+                generateMaze(currentSize);
+                playerPos = { x: 0, y: 0 };
+                goalPos = { row: currentSize - 1, col: currentSize - 1 };
+                generateItems();
+                gameWinFlag = false;
+                gameActive = true;
+                showLevelComplete = false;
+                isGraduated = false;
+                updateLevelBadge();
+                statusDiv.innerHTML = ">> 重启矩阵 <<";
+                draw();
+                showToast("系统重启 · 初始迷宫");
+                if (!isTimerRunning && document.hasFocus()) startTimer();
             }
-            gameWinFlag = false;
-            gameActive = true;
-            
-            // 重置道具系统
-            inventory = { keys: 0, shields: 0, speedBoosts: 0 };
-            activeBuffs = { shield: false, speedBoost: 0, compass: false };
-            updateInventoryDisplay();
-            
-            generateMaze(currentSize);
-            playerPos = { x: 0, y: 0 };
-            goalPos = { row: currentSize-1, col: currentSize-1 };
-            generateItems(); // 生成新道具
-            draw();
-        }
-        
-        function fullReset(){
-            if(timerInterval) clearInterval(timerInterval);
-            isTimerRunning = false;
-            h=m=s=ms=0;
-            updateTimerDisplay();
-            currentSize = 14;
-            calcCellSize();
-            
-            inventory = { keys: 0, shields: 0, speedBoosts: 0 };
-            activeBuffs = { shield: false, speedBoost: 0, compass: false };
-            updateInventoryDisplay();
-            
-            generateMaze(currentSize);
-            playerPos = { x: 0, y: 0 };
-            goalPos = { row: currentSize-1, col: currentSize-1 };
-            generateItems();
-            gameWinFlag = false;
-            gameActive = true;
-            showLevelComplete = false;
-            isGraduated = false;
-            updateLevelBadge();
-            statusDiv.innerHTML = ">> 重启矩阵 <<";
-            draw();
-            showToast("系统重启 · 初始迷宫");
-            if(!isTimerRunning && document.hasFocus()) startTimer();
-        }
-        
-        function updateLevelBadge(){
-            levelBadge.innerHTML = `[ ${currentSize} x ${currentSize} ]`;
-            if(currentSize >= 22) levelBadge.style.color = "#ff3366";
-            else if(currentSize >= 18) levelBadge.style.color = "#ffaa44";
-            else levelBadge.style.color = "#0ff";
-        }
-        
-        function updateInventoryDisplay() {
-            keyCountSpan.innerHTML = `🔑 ${inventory.keys}`;
-            shieldCountSpan.innerHTML = `🛡️ ${inventory.shields}`;
-            speedCountSpan.innerHTML = `⚡ ${inventory.speedBoosts}`;
-        }
-        
-        // ----- 计时器 ----
-        function timerUpdate(){
-            ms += 50;
-            if(ms >= 1000){
-                ms = 0;
-                s++;
-                if(s >= 60){
-                    s = 0;
-                    m++;
-                    if(m >= 60){
-                        m = 0;
-                        h++;
-                    }
-                }
+
+            function updateLevelBadge() {
+                levelBadge.innerHTML = `[ ${currentSize} x ${currentSize} ]`;
+                if (currentSize >= 22) levelBadge.style.color = "#ff3366";
+                else if (currentSize >= 18) levelBadge.style.color = "#ffaa44";
+                else levelBadge.style.color = "#0ff";
             }
-            updateTimerDisplay();
-        }
-        
-        function updateTimerDisplay(){
-            let str = `${toDub(h)}时${toDub(m)}分${toDub(s)}秒${toDubms(ms)}毫秒`;
-            timeSpan.innerHTML = str;
-        }
-        
-        function toDub(n){ return n < 10 ? "0"+n : ""+n; }
-        function toDubms(n){ if(n<10) return "00"+n; else if(n<100) return "0"+n; return n; }
-        
-        function startTimer(){
-            if(timerInterval) clearInterval(timerInterval);
-            isTimerRunning = true;
-            timerInterval = setInterval(()=>{
-                if(gameActive && !gameWinFlag) timerUpdate();
-            }, 50);
-        }
-        
-        function pauseTimer(){
-            if(timerInterval){
-                clearInterval(timerInterval);
-                isTimerRunning = false;
-                timerInterval = null;
-                showToast("⏸ 时间暂停");
+
+            function updateInventoryDisplay() {
+                keyCountSpan.innerHTML = `🔑 ${inventory.keys}`;
+                shieldCountSpan.innerHTML = `🛡️ ${inventory.shields}`;
+                speedCountSpan.innerHTML = `⚡ ${inventory.speedBoosts}`;
             }
-        }
-        
-        function generateWinParticles(){
-            winParticles = [];
-            for(let i=0;i<100;i++){
-                winParticles.push({
-                    x: (goalPos.col+0.5)*cellW,
-                    y: (goalPos.row+0.5)*cellH,
-                    vx: (Math.random()-0.5)*8,
-                    vy: (Math.random()-0.5)*8 - 3,
-                    life: 1.5,
-                    color: ['#0ff','#f0f','#ffaa44','#0f0','#ff6600'][Math.floor(Math.random()*5)]
-                });
-            }
-        }
-        
-        // 查找通往终点的路径（用于指南针）
-        function findPathToGoal() {
-            // 简单的BFS寻路o(￣ヘ￣o)
-            const startIdx = playerPos.y * currentSize + playerPos.x;
-            const endIdx = goalPos.row * currentSize + goalPos.col;
-            const visited = new Array(currentSize * currentSize).fill(false);
-            const parent = new Array(currentSize * currentSize).fill(-1);
-            const queue = [startIdx];
-            visited[startIdx] = true;
-            
-            while(queue.length > 0) {
-                const current = queue.shift();
-                if(current === endIdx) break;
-                
-                const row = Math.floor(current / currentSize);
-                const col = current % currentSize;
-                const neighbors = [
-                    {dr: -1, dc: 0}, {dr: 1, dc: 0}, {dr: 0, dc: -1}, {dr: 0, dc: 1}
-                ];
-                
-                for(let {dr, dc} of neighbors) {
-                    const newRow = row + dr;
-                    const newCol = col + dc;
-                    if(newRow >= 0 && newRow < currentSize && newCol >= 0 && newCol < currentSize) {
-                        const newIdx = newRow * currentSize + newCol;
-                        if(!visited[newIdx] && isConnected(current, newIdx, currentSize)) {
-                            visited[newIdx] = true;
-                            parent[newIdx] = current;
-                            queue.push(newIdx);
+
+            // ----- 计时器 ----
+            function timerUpdate() {
+                ms += 50;
+                if (ms >= 1000) {
+                    ms = 0;
+                    s++;
+                    if (s >= 60) {
+                        s = 0;
+                        m++;
+                        if (m >= 60) {
+                            m = 0;
+                            h++;
                         }
                     }
                 }
+                updateTimerDisplay();
             }
-            
-            // 重建路径
-            const path = [];
-            let current = endIdx;
-            while(current !== -1) {
-                path.unshift(current);
-                current = parent[current];
+
+            function updateTimerDisplay() {
+                let str = `${toDub(h)}时${toDub(m)}分${toDub(s)}秒${toDubms(ms)}毫秒`;
+                timeSpan.innerHTML = str;
             }
-            return path;
-        }
-        
-        // ========== 渲染引擎 ==========
-        function draw() {
-            if(!ctx) return;
-            calcCellSize();
-            const w = canvas.width, h = canvas.height;
-            ctx.fillStyle = "#02020c";
-            ctx.fillRect(0, 0, w, h);
-            if(showLevelComplete){
-                // 绘制通关画面
-                ctx.fillStyle = "rgba(0,0,0,0.8)";
-                ctx.fillRect(0,0,w,h);
-                // 更新并绘制粒子
-                for(let i = winParticles.length - 1; i >= 0; i--){
-                    let p = winParticles[i];
-                    p.x += p.vx;
-                    p.y += p.vy;
-                    p.vy += 0.1;
-                    p.life -= 0.02;
-                    if(p.life <= 0){
-                        winParticles.splice(i,1);
+
+            function toDub(n) { return n < 10 ? "0" + n : "" + n; }
+            function toDubms(n) { if (n < 10) return "00" + n; else if (n < 100) return "0" + n; return n; }
+
+            function startTimer() {
+                if (timerInterval) clearInterval(timerInterval);
+                isTimerRunning = true;
+                timerInterval = setInterval(() => {
+                    if (gameActive && !gameWinFlag) timerUpdate();
+                }, 50);
+            }
+
+            function pauseTimer() {
+                if (timerInterval) {
+                    clearInterval(timerInterval);
+                    isTimerRunning = false;
+                    timerInterval = null;
+                    showToast("⏸ 时间暂停");
+                }
+            }
+
+            function generateWinParticles() {
+                winParticles = [];
+                for (let i = 0; i < 100; i++) {
+                    winParticles.push({
+                        x: (goalPos.col + 0.5) * cellW,
+                        y: (goalPos.row + 0.5) * cellH,
+                        vx: (Math.random() - 0.5) * 8,
+                        vy: (Math.random() - 0.5) * 8 - 3,
+                        life: 1.5,
+                        color: ['#0ff', '#f0f', '#ffaa44', '#0f0', '#ff6600'][Math.floor(Math.random() * 5)]
+                    });
+                }
+            }
+
+            // 查找通往终点的路径（用于指南针）
+            function findPathToGoal() {
+                // 简单的BFS寻路o(￣ヘ￣o)
+                const startIdx = playerPos.y * currentSize + playerPos.x;
+                const endIdx = goalPos.row * currentSize + goalPos.col;
+                const visited = new Array(currentSize * currentSize).fill(false);
+                const parent = new Array(currentSize * currentSize).fill(-1);
+                const queue = [startIdx];
+                visited[startIdx] = true;
+
+                while (queue.length > 0) {
+                    const current = queue.shift();
+                    if (current === endIdx) break;
+
+                    const row = Math.floor(current / currentSize);
+                    const col = current % currentSize;
+                    const neighbors = [
+                        { dr: -1, dc: 0 }, { dr: 1, dc: 0 }, { dr: 0, dc: -1 }, { dr: 0, dc: 1 }
+                    ];
+
+                    for (let { dr, dc } of neighbors) {
+                        const newRow = row + dr;
+                        const newCol = col + dc;
+                        if (newRow >= 0 && newRow < currentSize && newCol >= 0 && newCol < currentSize) {
+                            const newIdx = newRow * currentSize + newCol;
+                            if (!visited[newIdx] && isConnected(current, newIdx, currentSize)) {
+                                visited[newIdx] = true;
+                                parent[newIdx] = current;
+                                queue.push(newIdx);
+                            }
+                        }
+                    }
+                }
+
+                // 重建路径
+                const path = [];
+                let current = endIdx;
+                while (current !== -1) {
+                    path.unshift(current);
+                    current = parent[current];
+                }
+                return path;
+            }
+
+            // ========== 渲染引擎 ==========
+            function draw() {
+                if (!ctx) return;
+                calcCellSize();
+                const w = canvas.width, h = canvas.height;
+                ctx.fillStyle = "#02020c";
+                ctx.fillRect(0, 0, w, h);
+                if (showLevelComplete) {
+                    // 绘制通关画面
+                    ctx.fillStyle = "rgba(0,0,0,0.8)";
+                    ctx.fillRect(0, 0, w, h);
+                    // 更新并绘制粒子
+                    for (let i = winParticles.length - 1; i >= 0; i--) {
+                        let p = winParticles[i];
+                        p.x += p.vx;
+                        p.y += p.vy;
+                        p.vy += 0.1;
+                        p.life -= 0.02;
+                        if (p.life <= 0) {
+                            winParticles.splice(i, 1);
+                        } else {
+                            ctx.fillStyle = p.color;
+                            ctx.globalAlpha = p.life;
+                            ctx.beginPath();
+                            ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                    ctx.globalAlpha = 1;
+                    ctx.fillStyle = "#0ff";
+                    ctx.font = "bold 48px monospace";
+                    ctx.textAlign = "center";
+                    if (isGraduated) {
+                        ctx.fillText("CONGRATULATIONS!", w / 2, h / 2 - 50);
+                        ctx.fillText("You have mastered the maze!", w / 2, h / 2);
+                        ctx.fillText("Infinite transcendence achieved", w / 2, h / 2 + 50);
                     } else {
-                        ctx.fillStyle = p.color;
-                        ctx.globalAlpha = p.life;
+                        ctx.fillText("LEVEL COMPLETE", w / 2, h / 2 - 50);
+                        ctx.fillText(`Size: ${currentSize}x${currentSize}`, w / 2, h / 2);
+                        ctx.fillText("Next Level Loading...", w / 2, h / 2 + 50);
+                    }
+                    return;
+                }
+                timeShader = (Date.now() * 0.005) % (Math.PI * 2);
+
+                // 1. 绘制地板
+                for (let row = 0; row < currentSize; row++) {
+                    for (let col = 0; col < currentSize; col++) {
+                        let x = col * cellW, y = row * cellH;
+                        let grad = ctx.createLinearGradient(x, y, x + cellW, y + cellH);
+                        grad.addColorStop(0, "#12122a");
+                        grad.addColorStop(1, "#0a0a1c");
+                        ctx.fillStyle = grad;
+                        ctx.fillRect(x, y, cellW, cellH);
+                        ctx.strokeStyle = "#2a2a5a";
+                        ctx.lineWidth = 0.8;
+                        ctx.strokeRect(x + 1, y + 1, cellW - 2, cellH - 2);
+                    }
+                }
+
+                // 指南针路径显示
+                if (activeBuffs.compass) {
+                    const path = findPathToGoal();
+                    ctx.fillStyle = "#ffaa4433";
+                    for (let idx of path) {
+                        const row = Math.floor(idx / currentSize);
+                        const col = idx % currentSize;
+                        ctx.fillRect(col * cellW + 2, row * cellH + 2, cellW - 4, cellH - 4);
+                    }
+                }
+
+                // 2. 绘制墙壁
+                ctx.shadowBlur = 0;
+                for (let row = 0; row < currentSize; row++) {
+                    for (let col = 0; col < currentSize; col++) {
+                        let x = col * cellW, y = row * cellH;
+                        let idx = row * currentSize + col;
+
+                        if (col + 1 < currentSize) {
+                            let rightIdx = row * currentSize + (col + 1);
+                            if (!isConnected(idx, rightIdx, currentSize)) {
+                                ctx.fillStyle = "#2a2a4a";
+                                ctx.fillRect(x + cellW - 5, y, 5, cellH);
+                                ctx.fillStyle = "#4a4a7a";
+                                ctx.fillRect(x + cellW - 4, y, 2, cellH);
+                                ctx.fillStyle = "#00aaff66";
+                                ctx.fillRect(x + cellW - 3, y, 1, cellH);
+                                ctx.strokeStyle = "#88aaff";
+                                ctx.lineWidth = 1;
+                                ctx.beginPath();
+                                ctx.moveTo(x + cellW - 4, y);
+                                ctx.lineTo(x + cellW - 4, y + cellH);
+                                ctx.stroke();
+                            }
+                        }
+
+                        if (row + 1 < currentSize) {
+                            let downIdx = (row + 1) * currentSize + col;
+                            if (!isConnected(idx, downIdx, currentSize)) {
+                                ctx.fillStyle = "#2a2a4a";
+                                ctx.fillRect(x, y + cellH - 5, cellW, 5);
+                                ctx.fillStyle = "#4a4a7a";
+                                ctx.fillRect(x, y + cellH - 4, cellW, 2);
+                                ctx.fillStyle = "#ff66aa66";
+                                ctx.fillRect(x, y + cellH - 3, cellW, 1);
+                                ctx.strokeStyle = "#ffaacc";
+                                ctx.lineWidth = 1;
+                                ctx.beginPath();
+                                ctx.moveTo(x, y + cellH - 4);
+                                ctx.lineTo(x + cellW, y + cellH - 4);
+                                ctx.stroke();
+                            }
+                        }
+                    }
+                }
+
+                // 3. 绘制道具
+                for (let item of items) {
+                    if (item.collected) continue;
+                    let ix = item.col * cellW, iy = item.row * cellH;
+                    let pulse = 0.7 + Math.sin(timeShader * 5) * 0.3;
+
+                    ctx.shadowBlur = 10;
+                    // 不同道具不同颜色
+                    switch (item.type) {
+                        case ITEM_TYPES.KEY:
+                            ctx.shadowColor = "#ffaa00";
+                            ctx.fillStyle = `rgba(255, 200, 0, ${pulse})`;
+                            break;
+                        case ITEM_TYPES.SHIELD:
+                            ctx.shadowColor = "#00aaff";
+                            ctx.fillStyle = `rgba(0, 170, 255, ${pulse})`;
+                            break;
+                        case ITEM_TYPES.SPEED:
+                            ctx.shadowColor = "#ff00ff";
+                            ctx.fillStyle = `rgba(255, 0, 255, ${pulse})`;
+                            break;
+                        case ITEM_TYPES.TELEPORT:
+                            ctx.shadowColor = "#00ff00";
+                            ctx.fillStyle = `rgba(0, 255, 0, ${pulse})`;
+                            break;
+                        case ITEM_TYPES.COMPASS:
+                            ctx.shadowColor = "#ff6600";
+                            ctx.fillStyle = `rgba(255, 100, 0, ${pulse})`;
+                            break;
+                    }
+
+                    // 绘制道具图标
+                    ctx.beginPath();
+                    ctx.arc(ix + cellW / 2, iy + cellH / 2, cellW * 0.2, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.font = `${Math.floor(cellW * 0.4)}px Arial`;
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillStyle = "#fff";
+                    let icon = "?";
+                    if (item.type === ITEM_TYPES.KEY) icon = "🔑";
+                    else if (item.type === ITEM_TYPES.SHIELD) icon = "🛡️";
+                    else if (item.type === ITEM_TYPES.SPEED) icon = "⚡";
+                    else if (item.type === ITEM_TYPES.TELEPORT) icon = "🌀";
+                    else if (item.type === ITEM_TYPES.COMPASS) icon = "🧭";
+                    ctx.fillText(icon, ix + cellW / 2, iy + cellH / 2);
+                }
+
+                ctx.shadowBlur = 0;
+
+                // 4. 绘制终点
+                let gRow = goalPos.row, gCol = goalPos.col;
+                let gx = gCol * cellW, gy = gRow * cellH;
+                let pulse = 0.5 + Math.sin(timeShader * 8) * 0.3;
+                ctx.shadowBlur = 12;
+                ctx.shadowColor = "#0f0";
+                ctx.fillStyle = `rgba(0, 220, 100, ${pulse * 0.6})`;
+                ctx.fillRect(gx + 3, gy + 3, cellW - 6, cellH - 6);
+                ctx.fillStyle = `rgba(50, 255, 100, 0.9)`;
+                ctx.font = `${Math.floor(cellW * 0.6)}px monospace`;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText("🏁", gx + cellW / 2, gy + cellH / 2);
+
+                // 5. 绘制玩家，其实想做鹅的星际穿越但是这里面没有鹅对象可以调用，难过
+                let px = playerPos.x * cellW, py = playerPos.y * cellH;
+                let cx = px + cellW / 2, cy = py + cellH / 2;
+
+                // 护盾效果
+                if (activeBuffs.shield) {
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = "#00aaff";
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, cellW * 0.4, 0, Math.PI * 2);
+                    ctx.strokeStyle = "#00aaff";
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                }
+
+                // 加速效果
+                if (activeBuffs.speedBoost > 0) {
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = "#ff00ff";
+                    for (let i = 0; i < 3; i++) {
                         ctx.beginPath();
-                        ctx.arc(p.x, p.y, 3, 0, Math.PI*2);
+                        ctx.moveTo(cx - cellW * 0.3 - i * 5, cy);
+                        ctx.lineTo(cx - cellW * 0.4 - i * 5, cy - cellW * 0.1);
+                        ctx.lineTo(cx - cellW * 0.4 - i * 5, cy + cellW * 0.1);
+                        ctx.closePath();
+                        ctx.fillStyle = "#ff00ffaa";
                         ctx.fill();
                     }
                 }
-                ctx.globalAlpha = 1;
-                ctx.fillStyle = "#0ff";
-                ctx.font = "bold 48px monospace";
-                ctx.textAlign = "center";
-                if(isGraduated){
-                    ctx.fillText("CONGRATULATIONS!", w/2, h/2 - 50);
-                    ctx.fillText("You have mastered the maze!", w/2, h/2);
-                    ctx.fillText("Infinite transcendence achieved", w/2, h/2 + 50);
-                } else {
-                    ctx.fillText("LEVEL COMPLETE", w/2, h/2 - 50);
-                    ctx.fillText(`Size: ${currentSize}x${currentSize}`, w/2, h/2);
-                    ctx.fillText("Next Level Loading...", w/2, h/2 + 50);
-                }
-                return;
-            }
-            timeShader = (Date.now() * 0.005) % (Math.PI*2);
-            
-            // 1. 绘制地板
-            for(let row=0; row<currentSize; row++){
-                for(let col=0; col<currentSize; col++){
-                    let x = col * cellW, y = row * cellH;
-                    let grad = ctx.createLinearGradient(x, y, x+cellW, y+cellH);
-                    grad.addColorStop(0, "#12122a");
-                    grad.addColorStop(1, "#0a0a1c");
-                    ctx.fillStyle = grad;
-                    ctx.fillRect(x, y, cellW, cellH);
-                    ctx.strokeStyle = "#2a2a5a";
-                    ctx.lineWidth = 0.8;
-                    ctx.strokeRect(x+1, y+1, cellW-2, cellH-2);
-                }
-            }
-            
-            // 指南针路径显示
-            if(activeBuffs.compass) {
-                const path = findPathToGoal();
-                ctx.fillStyle = "#ffaa4433";
-                for(let idx of path) {
-                    const row = Math.floor(idx / currentSize);
-                    const col = idx % currentSize;
-                    ctx.fillRect(col * cellW + 2, row * cellH + 2, cellW - 4, cellH - 4);
-                }
-            }
-            
-            // 2. 绘制墙壁
-            ctx.shadowBlur = 0;
-            for(let row=0; row<currentSize; row++){
-                for(let col=0; col<currentSize; col++){
-                    let x = col * cellW, y = row * cellH;
-                    let idx = row * currentSize + col;
-                    
-                    if(col+1 < currentSize){
-                        let rightIdx = row * currentSize + (col+1);
-                        if(!isConnected(idx, rightIdx, currentSize)){
-                            ctx.fillStyle = "#2a2a4a";
-                            ctx.fillRect(x+cellW-5, y, 5, cellH);
-                            ctx.fillStyle = "#4a4a7a";
-                            ctx.fillRect(x+cellW-4, y, 2, cellH);
-                            ctx.fillStyle = "#00aaff66";
-                            ctx.fillRect(x+cellW-3, y, 1, cellH);
-                            ctx.strokeStyle = "#88aaff";
-                            ctx.lineWidth = 1;
-                            ctx.beginPath();
-                            ctx.moveTo(x+cellW-4, y);
-                            ctx.lineTo(x+cellW-4, y+cellH);
-                            ctx.stroke();
-                        }
-                    }
-                    
-                    if(row+1 < currentSize){
-                        let downIdx = (row+1)*currentSize + col;
-                        if(!isConnected(idx, downIdx, currentSize)){
-                            ctx.fillStyle = "#2a2a4a";
-                            ctx.fillRect(x, y+cellH-5, cellW, 5);
-                            ctx.fillStyle = "#4a4a7a";
-                            ctx.fillRect(x, y+cellH-4, cellW, 2);
-                            ctx.fillStyle = "#ff66aa66";
-                            ctx.fillRect(x, y+cellH-3, cellW, 1);
-                            ctx.strokeStyle = "#ffaacc";
-                            ctx.lineWidth = 1;
-                            ctx.beginPath();
-                            ctx.moveTo(x, y+cellH-4);
-                            ctx.lineTo(x+cellW, y+cellH-4);
-                            ctx.stroke();
-                        }
-                    }
-                }
-            }
-            
-            // 3. 绘制道具
-            for(let item of items) {
-                if(item.collected) continue;
-                let ix = item.col * cellW, iy = item.row * cellH;
-                let pulse = 0.7 + Math.sin(timeShader * 5) * 0.3;
-                
-                ctx.shadowBlur = 10;
-                // 不同道具不同颜色
-                switch(item.type) {
-                    case ITEM_TYPES.KEY:
-                        ctx.shadowColor = "#ffaa00";
-                        ctx.fillStyle = `rgba(255, 200, 0, ${pulse})`;
-                        break;
-                    case ITEM_TYPES.SHIELD:
-                        ctx.shadowColor = "#00aaff";
-                        ctx.fillStyle = `rgba(0, 170, 255, ${pulse})`;
-                        break;
-                    case ITEM_TYPES.SPEED:
-                        ctx.shadowColor = "#ff00ff";
-                        ctx.fillStyle = `rgba(255, 0, 255, ${pulse})`;
-                        break;
-                    case ITEM_TYPES.TELEPORT:
-                        ctx.shadowColor = "#00ff00";
-                        ctx.fillStyle = `rgba(0, 255, 0, ${pulse})`;
-                        break;
-                    case ITEM_TYPES.COMPASS:
-                        ctx.shadowColor = "#ff6600";
-                        ctx.fillStyle = `rgba(255, 100, 0, ${pulse})`;
-                        break;
-                }
-                
-                // 绘制道具图标
-                ctx.beginPath();
-                ctx.arc(ix + cellW/2, iy + cellH/2, cellW*0.2, 0, Math.PI*2);
-                ctx.fill();
-                
-                ctx.font = `${Math.floor(cellW * 0.4)}px Arial`;
-                ctx.textAlign = "center";
-                ctx.textBaseline = "middle";
-                ctx.fillStyle = "#fff";
-                let icon = "?";
-                if(item.type === ITEM_TYPES.KEY) icon = "🔑";
-                else if(item.type === ITEM_TYPES.SHIELD) icon = "🛡️";
-                else if(item.type === ITEM_TYPES.SPEED) icon = "⚡";
-                else if(item.type === ITEM_TYPES.TELEPORT) icon = "🌀";
-                else if(item.type === ITEM_TYPES.COMPASS) icon = "🧭";
-                ctx.fillText(icon, ix + cellW/2, iy + cellH/2);
-            }
-            
-            ctx.shadowBlur = 0;
-            
-            // 4. 绘制终点
-            let gRow = goalPos.row, gCol = goalPos.col;
-            let gx = gCol * cellW, gy = gRow * cellH;
-            let pulse = 0.5 + Math.sin(timeShader * 8) * 0.3;
-            ctx.shadowBlur = 12;
-            ctx.shadowColor = "#0f0";
-            ctx.fillStyle = `rgba(0, 220, 100, ${pulse*0.6})`;
-            ctx.fillRect(gx+3, gy+3, cellW-6, cellH-6);
-            ctx.fillStyle = `rgba(50, 255, 100, 0.9)`;
-            ctx.font = `${Math.floor(cellW * 0.6)}px monospace`;
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText("🏁", gx+cellW/2, gy+cellH/2);
-            
-            // 5. 绘制玩家，其实想做鹅的星际穿越但是这里面没有鹅对象可以调用，难过
-            let px = playerPos.x * cellW, py = playerPos.y * cellH;
-            let cx = px + cellW/2, cy = py + cellH/2;
-            
-            // 护盾效果
-            if(activeBuffs.shield) {
-                ctx.shadowBlur = 20;
-                ctx.shadowColor = "#00aaff";
-                ctx.beginPath();
-                ctx.arc(cx, cy, cellW*0.4, 0, Math.PI*2);
-                ctx.strokeStyle = "#00aaff";
-                ctx.lineWidth = 3;
-                ctx.stroke();
-            }
-            
-            // 加速效果
-            if(activeBuffs.speedBoost > 0) {
+
                 ctx.shadowBlur = 15;
-                ctx.shadowColor = "#ff00ff";
-                for(let i=0; i<3; i++) {
+                ctx.shadowColor = "#0ff";
+                for (let i = 0; i < 3; i++) {
+                    let rad = cellW * 0.28 + i * 3;
                     ctx.beginPath();
-                    ctx.moveTo(cx - cellW*0.3 - i*5, cy);
-                    ctx.lineTo(cx - cellW*0.4 - i*5, cy - cellW*0.1);
-                    ctx.lineTo(cx - cellW*0.4 - i*5, cy + cellW*0.1);
-                    ctx.closePath();
-                    ctx.fillStyle = "#ff00ffaa";
+                    ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(0, 200, 255, ${0.25 - i * 0.05})`;
                     ctx.fill();
                 }
-            }
-            
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = "#0ff";
-            for(let i=0;i<3;i++){
-                let rad = cellW*0.28 + i*3;
                 ctx.beginPath();
-                ctx.arc(cx, cy, rad, 0, Math.PI*2);
-                ctx.fillStyle = `rgba(0, 200, 255, ${0.25-i*0.05})`;
+                ctx.arc(cx, cy, cellW * 0.28, 0, Math.PI * 2);
+                ctx.fillStyle = "#00ccff";
                 ctx.fill();
-            }
-            ctx.beginPath();
-            ctx.arc(cx, cy, cellW*0.28, 0, Math.PI*2);
-            ctx.fillStyle = "#00ccff";
-            ctx.fill();
-            ctx.beginPath();
-            ctx.arc(cx, cy, cellW*0.16, 0, Math.PI*2);
-            ctx.fillStyle = "#ffffff";
-            ctx.fill();
-            ctx.fillStyle = "#000";
-            ctx.fillRect(cx - cellW*0.08, cy - cellW*0.05, cellW*0.06, cellW*0.04);
-            ctx.fillRect(cx + cellW*0.02, cy - cellW*0.05, cellW*0.06, cellW*0.04);
-            ctx.fillStyle = "#0ff";
-            ctx.fillRect(cx - cellW*0.07, cy - cellW*0.048, cellW*0.03, cellW*0.02);
-            ctx.fillRect(cx + cellW*0.03, cy - cellW*0.048, cellW*0.03, cellW*0.02);
-            
-            ctx.shadowBlur = 0;
-            
-            // 扫描线
-            ctx.globalAlpha = 0.15;
-            for(let i=0;i<h;i+=5){
+                ctx.beginPath();
+                ctx.arc(cx, cy, cellW * 0.16, 0, Math.PI * 2);
+                ctx.fillStyle = "#ffffff";
+                ctx.fill();
+                ctx.fillStyle = "#000";
+                ctx.fillRect(cx - cellW * 0.08, cy - cellW * 0.05, cellW * 0.06, cellW * 0.04);
+                ctx.fillRect(cx + cellW * 0.02, cy - cellW * 0.05, cellW * 0.06, cellW * 0.04);
                 ctx.fillStyle = "#0ff";
-                ctx.fillRect(0, i, w, 1);
+                ctx.fillRect(cx - cellW * 0.07, cy - cellW * 0.048, cellW * 0.03, cellW * 0.02);
+                ctx.fillRect(cx + cellW * 0.03, cy - cellW * 0.048, cellW * 0.03, cellW * 0.02);
+
+                ctx.shadowBlur = 0;
+
+                // 扫描线
+                ctx.globalAlpha = 0.15;
+                for (let i = 0; i < h; i += 5) {
+                    ctx.fillStyle = "#0ff";
+                    ctx.fillRect(0, i, w, 1);
+                }
+                ctx.globalAlpha = 1;
+
+                updateStatusText();
             }
-            ctx.globalAlpha = 1;
-            
-            updateStatusText();
-        }
-        
-        function updateStatusText(){
-            let status = ">> 星际穿越 <<";
-            if(gameWinFlag) status = ">> 传送突破 <<";
-            else if(!gameActive) status = ">> 系统暂停 <<";
-            if(activeBuffs.shield) status += " 🛡️";
-            if(activeBuffs.speedBoost > 0) status += " ⚡";
-            if(activeBuffs.compass) status += " 🧭";
-            statusDiv.innerHTML = status;
-        }
-        
-        // 键盘控制
-        function onKeyDown(e){
-            let key = e.key;
-            let dRow=0, dCol=0;
-            
-            // 空格使用道具（默认使用最合适的）
-            if(key === ' ') {
-                e.preventDefault();
-                if(inventory.keys > 0) {
-                    // 尝试在当前方向使用钥匙
-                    const directions = [[-1,0], [1,0], [0,-1], [0,1]];
-                    for(let [dr, dc] of directions) {
+
+            function updateStatusText() {
+                let status = ">> 星际穿越 <<";
+                if (gameWinFlag) status = ">> 传送突破 <<";
+                else if (!gameActive) status = ">> 系统暂停 <<";
+                if (activeBuffs.shield) status += " 🛡️";
+                if (activeBuffs.speedBoost > 0) status += " ⚡";
+                if (activeBuffs.compass) status += " 🧭";
+                statusDiv.innerHTML = status;
+            }
+
+            // 键盘控制
+            function onKeyDown(e) {
+                let key = e.key;
+                let dRow = 0, dCol = 0;
+
+                // 空格使用道具（默认使用最合适的）
+                if (key === ' ') {
+                    e.preventDefault();
+                    if (inventory.keys > 0) {
+                        // 尝试在当前方向使用钥匙
+                        const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+                        for (let [dr, dc] of directions) {
+                            let newRow = playerPos.y + dr;
+                            let newCol = playerPos.x + dc;
+                            if (newRow >= 0 && newRow < currentSize && newCol >= 0 && newCol < currentSize) {
+                                let curIdx = playerPos.y * currentSize + playerPos.x;
+                                let newIdx = newRow * currentSize + newCol;
+                                if (!isConnected(curIdx, newIdx, currentSize)) {
+                                    useKeyOnWall(curIdx, newIdx);
+                                    draw();
+                                    return;
+                                }
+                            }
+                        }
+                        showToast("❌ 周围没有墙壁", true);
+                    } else if (inventory.shields > 0) {
+                        activateShield();
+                    } else if (inventory.speedBoosts > 0) {
+                        activateSpeedBoost();
+                    }
+                    return;
+                }
+
+                if (key === 'ArrowUp' || key === 'w' || key === 'W') { dRow = -1; e.preventDefault(); }
+                else if (key === 'ArrowDown' || key === 's' || key === 'S') { dRow = 1; e.preventDefault(); }
+                else if (key === 'ArrowLeft' || key === 'a' || key === 'A') { dCol = -1; e.preventDefault(); }
+                else if (key === 'ArrowRight' || key === 'd' || key === 'D') { dCol = 1; e.preventDefault(); }
+                else return;
+
+                if (gameActive && !gameWinFlag) {
+                    tryMove(dRow, dCol);
+                    // 如果还有加速效果，允许继续移动
+                    if (activeBuffs.speedBoost > 0 && gameActive) {
+                        // 短暂延迟后可以再次移动
+                    }
+                }
+            }
+
+            function animate() {
+                draw();
+                requestAnimationFrame(animate);
+            }
+
+            function init() {
+                calcCellSize();
+                generateMaze(currentSize);
+                playerPos = { x: 0, y: 0 };
+                goalPos = { row: currentSize - 1, col: currentSize - 1 };
+                generateItems();
+                gameActive = true;
+                gameWinFlag = false;
+                showLevelComplete = false;
+                isGraduated = false;
+                updateLevelBadge();
+                updateInventoryDisplay();
+                startTimer();
+
+                window.addEventListener('keydown', onKeyDown);
+
+                resetBtn.addEventListener('click', fullReset);
+                startBtn.addEventListener('click', () => {
+                    if (!isTimerRunning && !gameWinFlag) {
+                        startTimer();
+                        gameActive = true;
+                        showToast(">> 连线重启");
+                    } else if (gameWinFlag) {
+                        fullReset();
+                        startTimer();
+                    }
+                    gameActive = true;
+                });
+                pauseBtn.addEventListener('click', () => {
+                    pauseTimer();
+                    gameActive = false;
+                    showToast("⏸ 暂停移动");
+                });
+
+                // 道具按钮
+                useKeyBtn.addEventListener('click', () => {
+                    if (!gameActive || gameWinFlag) return;
+                    const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+                    for (let [dr, dc] of directions) {
                         let newRow = playerPos.y + dr;
                         let newCol = playerPos.x + dc;
-                        if(newRow >= 0 && newRow < currentSize && newCol >= 0 && newCol < currentSize) {
+                        if (newRow >= 0 && newRow < currentSize && newCol >= 0 && newCol < currentSize) {
                             let curIdx = playerPos.y * currentSize + playerPos.x;
                             let newIdx = newRow * currentSize + newCol;
-                            if(!isConnected(curIdx, newIdx, currentSize)) {
+                            if (!isConnected(curIdx, newIdx, currentSize)) {
                                 useKeyOnWall(curIdx, newIdx);
                                 draw();
                                 return;
@@ -1113,102 +1223,23 @@
                         }
                     }
                     showToast("❌ 周围没有墙壁", true);
-                } else if(inventory.shields > 0) {
-                    activateShield();
-                } else if(inventory.speedBoosts > 0) {
-                    activateSpeedBoost();
-                }
-                return;
+                });
+
+                useShieldBtn.addEventListener('click', () => {
+                    if (gameActive && !gameWinFlag) activateShield();
+                });
+
+                useSpeedBtn.addEventListener('click', () => {
+                    if (gameActive && !gameWinFlag) activateSpeedBoost();
+                });
+
+                animate();
+                showToast("⚡ 有道具的秘密房间已加载！收集道具获得能力 ⚡");
             }
-            
-            if(key === 'ArrowUp' || key === 'w' || key === 'W') { dRow = -1; e.preventDefault();}
-            else if(key === 'ArrowDown' || key === 's' || key === 'S') { dRow = 1; e.preventDefault();}
-            else if(key === 'ArrowLeft' || key === 'a' || key === 'A') { dCol = -1; e.preventDefault();}
-            else if(key === 'ArrowRight' || key === 'd' || key === 'D') { dCol = 1; e.preventDefault();}
-            else return;
-            
-            if(gameActive && !gameWinFlag) {
-                tryMove(dRow, dCol);
-                // 如果还有加速效果，允许继续移动
-                if(activeBuffs.speedBoost > 0 && gameActive) {
-                    // 短暂延迟后可以再次移动
-                }
-            }
-        }
-        
-        function animate(){
-            draw();
-            requestAnimationFrame(animate);
-        }
-        
-        function init(){
-            calcCellSize();
-            generateMaze(currentSize);
-            playerPos = { x: 0, y: 0 };
-            goalPos = { row: currentSize-1, col: currentSize-1 };
-            generateItems();
-            gameActive = true;
-            gameWinFlag = false;
-            showLevelComplete = false;
-            isGraduated = false;
-            updateLevelBadge();
-            updateInventoryDisplay();
-            startTimer();
-            
-            window.addEventListener('keydown', onKeyDown);
-            
-            resetBtn.addEventListener('click', fullReset);
-            startBtn.addEventListener('click', ()=>{
-                if(!isTimerRunning && !gameWinFlag){
-                    startTimer();
-                    gameActive = true;
-                    showToast(">> 连线重启");
-                } else if(gameWinFlag){
-                    fullReset();
-                    startTimer();
-                }
-                gameActive = true;
-            });
-            pauseBtn.addEventListener('click', ()=>{
-                pauseTimer();
-                gameActive = false;
-                showToast("⏸ 暂停移动");
-            });
-            
-            // 道具按钮
-            useKeyBtn.addEventListener('click', ()=>{
-                if(!gameActive || gameWinFlag) return;
-                const directions = [[-1,0], [1,0], [0,-1], [0,1]];
-                for(let [dr, dc] of directions) {
-                    let newRow = playerPos.y + dr;
-                    let newCol = playerPos.x + dc;
-                    if(newRow >= 0 && newRow < currentSize && newCol >= 0 && newCol < currentSize) {
-                        let curIdx = playerPos.y * currentSize + playerPos.x;
-                        let newIdx = newRow * currentSize + newCol;
-                        if(!isConnected(curIdx, newIdx, currentSize)) {
-                            useKeyOnWall(curIdx, newIdx);
-                            draw();
-                            return;
-                        }
-                    }
-                }
-                showToast("❌ 周围没有墙壁", true);
-            });
-            
-            useShieldBtn.addEventListener('click', ()=>{
-                if(gameActive && !gameWinFlag) activateShield();
-            });
-            
-            useSpeedBtn.addEventListener('click', ()=>{
-                if(gameActive && !gameWinFlag) activateSpeedBoost();
-            });
-            
-            animate();
-            showToast("⚡ 有道具的秘密房间已加载！收集道具获得能力 ⚡");
-        }
-        
-        init();
-    })();
-</script>
+
+            init();
+        })();
+    </script>
 </body>
+
 </html>
